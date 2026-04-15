@@ -1,0 +1,9 @@
+main_mission:
+  description: >
+    1. Search for the current Bitcoin price in USD.
+    2. Calculate the amount of BTC $1000 can buy.
+    3. Use the FileWriteTool to save these findings to 'crypto_report.txt'.
+    Current Request: {task_description}
+  expected_output: >
+    A saved 'crypto_report.txt' file containing the live price and calculation.
+  agent: manager_agent

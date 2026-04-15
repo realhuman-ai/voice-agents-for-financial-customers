@@ -1,0 +1,7 @@
+Ethical concerns surrounding LLMs include:
+1. Bias and fairness: The risk of perpetuating societal biases embedded in training data.
+2. Privacy: The possibility of models inadvertently revealing sensitive information present in their training datasets.
+3. Misinformation: The potential to generate and spread false or misleading information.
+4. Job displacement: Automation of tasks traditionally performed by humans, leading to economic disruption.
+5. Misuse: The risk of malicious applications, such as generating deepfake content or deceptive phishing messages.
+6. Accountability: Challenges in assigning responsibility for decisions or actions taken by AI systems.

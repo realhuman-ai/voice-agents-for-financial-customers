@@ -1,0 +1,9 @@
+LLMs are capable of a variety of tasks, such as:
+1. Text generation: Creating human-like text based on a prompt.
+2. Language translation: Translating text between languages.
+3. Sentiment analysis: Determining the sentiment expressed in a piece of text.
+4. Summarization: Condensing large volumes of information into shorter summaries.
+5. Question answering: Providing direct answers to user queries.
+6. Code generation: Writing programming code in various languages.
+7. Conversational AI: Powering chatbots and virtual assistants for natural interactions.
+8. Creative writing: Assisting in story writing, poetry, or script creation.

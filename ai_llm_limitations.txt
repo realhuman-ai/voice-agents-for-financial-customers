@@ -1,0 +1,7 @@
+Despite their impressive capabilities, LLMs have notable limitations:
+1. Lack of true understanding: They rely on patterns in data rather than genuine comprehension.
+2. Bias: Models can inherit biases present in their training data.
+3. Misinformation: They may generate plausible-sounding but incorrect or nonsensical answers.
+4. Context limitations: Models have a fixed context window and may lose track of long conversations or documents.
+5. Resource-intensive: Training and running LLMs require substantial computational power and energy.
+6. Hallucination: They might produce information that is entirely fabricated and lacks basis in data.
