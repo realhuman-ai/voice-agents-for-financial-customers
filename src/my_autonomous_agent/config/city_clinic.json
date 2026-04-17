@@ -1,0 +1,13 @@
+{
+  "business_id": "",
+  "name": "City Clinic",
+  "type": "clinic",
+  "phone": "",
+  "agent_name": "clinic-agent",
+  "slot_capacity": 1,
+  "slot_duration_minutes": 30,
+  "open_time": "09:00",
+  "close_time": "17:00",
+  "voice": "en-US-JennyNeural",
+  "agent_persona": "Sarah"
+}

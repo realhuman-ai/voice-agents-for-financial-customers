@@ -4,7 +4,7 @@ import threading
 from dotenv import load_dotenv
 from starlette.applications import Starlette
 from starlette.routing import Route
-from starlette.responses import HTMLResponse, JSONResponse
+from starlette.responses import HTMLResponse, JSONResponse, Response
 from starlette.requests import Request
 import uvicorn
 
@@ -32,7 +32,7 @@ def execute_run(run_id: str, task_description: str):
         }
 
 
-async def homepage(request: Request):
+async def homepage(_request: Request):
     html = """
 <!DOCTYPE html>
 <html lang="en">
@@ -320,11 +320,40 @@ async def get_status(request: Request):
     return JSONResponse({"run_id": run_id, **entry})
 
 
+async def twilio_voice_webhook(request: Request):
+    """
+    Twilio calls this when someone dials any of our Twilio numbers.
+    Routes the call to the correct LiveKit agent based on the dialed number.
+    """
+    form = await request.form()
+    to_number = form.get("To", "").replace(" ", "").replace("-", "")
+
+    sip_domain = os.getenv("LIVEKIT_SIP_TRUNK_URI", "").replace("sip:", "")
+
+    # Route to the correct agent based on which number was dialed
+    QUICK_LUBE_NUMBER = "+12183962707"
+    if to_number == QUICK_LUBE_NUMBER:
+        sip_phone = QUICK_LUBE_NUMBER
+    else:
+        # Default: Biryani Paradise reservation agent
+        sip_phone = os.getenv("TWILIO_PHONE_NUMBER", "")
+
+    sip_uri = f"sip:{sip_phone}@{sip_domain};transport=tcp"
+    twiml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Dial>
+        <Sip>{sip_uri}</Sip>
+    </Dial>
+</Response>"""
+    return Response(content=twiml, media_type="application/xml")
+
+
 app = Starlette(
     routes=[
         Route("/", homepage),
         Route("/run", run_task, methods=["POST"]),
         Route("/status/{run_id}", get_status),
+        Route("/twilio/voice", twilio_voice_webhook, methods=["POST"]),
     ]
 )
 

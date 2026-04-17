@@ -1,0 +1,13 @@
+{
+  "business_id": "52afa778-93bd-45fc-87c3-51a137e90481",
+  "name": "Quick Lube",
+  "type": "oil_change",
+  "phone": "+12183962707",
+  "agent_name": "oilchange-agent",
+  "slot_capacity": 3,
+  "slot_duration_minutes": 45,
+  "open_time": "08:00",
+  "close_time": "18:00",
+  "voice": "en-US-GuyNeural",
+  "agent_persona": "Mike"
+}

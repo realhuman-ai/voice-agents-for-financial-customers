@@ -1,0 +1,61 @@
+{
+  "restaurant": "Biryani Paradise",
+  "categories": [
+    {
+      "name": "Biryani",
+      "items": [
+        { "name": "Chicken Dum Biryani", "price": 16.99, "description": "Slow-cooked chicken with basmati rice and aromatic spices", "spice": "medium" },
+        { "name": "Lamb Biryani", "price": 18.99, "description": "Tender lamb pieces layered with saffron rice", "spice": "medium" },
+        { "name": "Vegetable Biryani", "price": 13.99, "description": "Seasonal vegetables with fragrant basmati rice", "spice": "mild" },
+        { "name": "Prawn Biryani", "price": 19.99, "description": "Juicy prawns cooked with coastal spices and rice", "spice": "hot" },
+        { "name": "Paneer Biryani", "price": 14.99, "description": "Fresh cottage cheese with biryani spices and rice", "spice": "mild" }
+      ]
+    },
+    {
+      "name": "Curries",
+      "items": [
+        { "name": "Butter Chicken", "price": 15.99, "description": "Creamy tomato-based chicken curry, mildly spiced", "spice": "mild" },
+        { "name": "Chicken Tikka Masala", "price": 15.99, "description": "Grilled chicken in rich masala sauce", "spice": "medium" },
+        { "name": "Lamb Rogan Josh", "price": 17.99, "description": "Slow-braised lamb in Kashmiri spices", "spice": "hot" },
+        { "name": "Dal Makhani", "price": 12.99, "description": "Black lentils slow-cooked overnight in butter and cream", "spice": "mild" },
+        { "name": "Palak Paneer", "price": 13.99, "description": "Cottage cheese in creamy spinach sauce", "spice": "mild" },
+        { "name": "Chana Masala", "price": 12.99, "description": "Spiced chickpea curry with tangy tomatoes", "spice": "medium" }
+      ]
+    },
+    {
+      "name": "Starters",
+      "items": [
+        { "name": "Chicken Samosa (2 pcs)", "price": 5.99, "description": "Crispy pastry filled with spiced chicken", "spice": "mild" },
+        { "name": "Vegetable Samosa (2 pcs)", "price": 4.99, "description": "Crispy pastry filled with spiced potatoes and peas", "spice": "mild" },
+        { "name": "Chicken Seekh Kebab", "price": 9.99, "description": "Minced chicken on skewers with herbs and spices", "spice": "medium" },
+        { "name": "Paneer Tikka", "price": 10.99, "description": "Grilled marinated cottage cheese with peppers", "spice": "mild" }
+      ]
+    },
+    {
+      "name": "Breads",
+      "items": [
+        { "name": "Garlic Naan", "price": 3.99, "description": "Soft leavened bread with garlic and butter" },
+        { "name": "Plain Naan", "price": 2.99, "description": "Traditional soft leavened bread" },
+        { "name": "Paratha", "price": 3.49, "description": "Flaky whole wheat bread" },
+        { "name": "Puri (2 pcs)", "price": 3.49, "description": "Deep-fried whole wheat bread" }
+      ]
+    },
+    {
+      "name": "Drinks",
+      "items": [
+        { "name": "Mango Lassi", "price": 4.99, "description": "Chilled yogurt drink with fresh mango" },
+        { "name": "Sweet Lassi", "price": 3.99, "description": "Chilled sweet yogurt drink" },
+        { "name": "Masala Chai", "price": 2.99, "description": "Spiced Indian tea with milk" },
+        { "name": "Rose Milk", "price": 3.49, "description": "Chilled milk with rose syrup" }
+      ]
+    },
+    {
+      "name": "Desserts",
+      "items": [
+        { "name": "Gulab Jamun (2 pcs)", "price": 4.99, "description": "Soft milk dumplings soaked in rose syrup" },
+        { "name": "Rasmalai (2 pcs)", "price": 5.99, "description": "Soft cheese patties in sweetened milk" },
+        { "name": "Kheer", "price": 4.49, "description": "Creamy rice pudding with cardamom and nuts" }
+      ]
+    }
+  ]
+}

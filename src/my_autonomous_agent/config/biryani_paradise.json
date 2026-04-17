@@ -1,0 +1,19 @@
+{
+  "business_id": "7709b1dc-8def-4141-a7d7-4e00e5395884",
+  "name": "Biryani Paradise",
+  "type": "restaurant",
+  "phone": "+15822599600",
+  "agent_name": "reservation-agent",
+  "slot_capacity": 10,
+  "slot_duration_minutes": 90,
+  "open_time": "11:00",
+  "close_time": "22:00",
+  "last_seating": "20:30",
+  "last_takeout": "21:30",
+  "total_seats": 50,
+  "tables": 10,
+  "chairs_per_table": 5,
+  "max_party_size": 10,
+  "voice": "en-IN-NeerjaNeural",
+  "agent_persona": "Priya"
+}
