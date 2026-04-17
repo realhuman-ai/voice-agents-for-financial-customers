@@ -2,8 +2,6 @@
 Shared booking logic for all business types.
 Works for restaurants, oil change shops, clinics, salons, etc.
 """
-from datetime import date, datetime
-from typing import Optional
 from .supabase_client import get_client
 
 MAX_WAITLIST = 5
@@ -117,17 +115,36 @@ def book_appointment(
 def get_available_slots(business_id: str, appt_date: str, open_time: str = "17:00", close_time: str = "22:00", slot_duration_minutes: int = 90) -> list:
     """
     Return all available time slots for a business on a given date.
-    Generates slots from open_time to close_time at slot_duration_minutes intervals.
+    Uses a single DB query instead of one per slot.
     """
     from datetime import datetime, timedelta
+    db = get_client()
+
+    # Single query: fetch capacity and all bookings for the day at once
+    biz = db.table("businesses").select("settings").eq("id", business_id).single().execute()
+    capacity = biz.data.get("settings", {}).get("slot_capacity", 1) if biz.data else 1
+
+    result = db.table("appointments") \
+        .select("appointment_time") \
+        .eq("business_id", business_id) \
+        .eq("appointment_date", appt_date) \
+        .eq("status", "confirmed") \
+        .execute()
+
+    # Count bookings per slot in memory
+    booked_counts: dict = {}
+    for row in (result.data or []):
+        t = str(row["appointment_time"])[:5]  # normalize to HH:MM
+        booked_counts[t] = booked_counts.get(t, 0) + 1
+
+    # Generate slots and check availability in memory — no more N DB calls
     start = datetime.strptime(open_time, "%H:%M")
     end = datetime.strptime(close_time, "%H:%M")
     available = []
     current = start
     while current < end:
         slot_time = current.strftime("%H:%M")
-        result = check_availability(business_id, appt_date, slot_time)
-        if result["available"]:
+        if booked_counts.get(slot_time, 0) < capacity:
             available.append(slot_time)
         current += timedelta(minutes=slot_duration_minutes)
     return available

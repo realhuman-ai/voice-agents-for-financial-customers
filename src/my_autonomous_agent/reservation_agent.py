@@ -20,6 +20,22 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("reservation-agent")
 
+REQUIRED_ENV_VARS = [
+    "AZURE_API_KEY", "AZURE_API_BASE", "AZURE_API_VERSION",
+    "AZURE_SPEECH_KEY", "AZURE_SPEECH_REGION",
+    "CARTESIA_API_KEY",
+    "LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET",
+    "SUPABASE_URL", "SUPABASE_KEY",
+    "BIRYANI_PARADISE_ID",
+]
+
+def _validate_env():
+    missing = [k for k in REQUIRED_ENV_VARS if not os.getenv(k)]
+    if missing:
+        raise RuntimeError(f"Missing required environment variables: {', '.join(missing)}")
+
+_validate_env()
+
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 MENU_FILE = PROJECT_ROOT / "menu.json"
 BUSINESS_ID = os.getenv("BIRYANI_PARADISE_ID", "")
