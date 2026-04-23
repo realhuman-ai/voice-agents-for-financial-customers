@@ -3,7 +3,9 @@ import sys
 import logging
 import os
 import json
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 # Must be set before any livekit imports on Windows
 if sys.platform == "win32":
@@ -14,6 +16,7 @@ from livekit.agents import AutoSubscribe, JobContext, JobProcess, WorkerOptions,
 from livekit.agents.llm import function_tool
 from livekit.agents.voice import Agent, AgentSession
 from livekit.plugins import azure, silero, openai, cartesia
+from my_autonomous_agent.config import load_config
 
 load_dotenv()
 
@@ -39,7 +42,19 @@ _validate_env()
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 MENU_FILE = PROJECT_ROOT / "menu.json"
 BUSINESS_ID = os.getenv("BIRYANI_PARADISE_ID", "")
-RESTAURANT_NAME = "Biryani Paradise"
+
+_cfg = load_config().get("biryani_paradise", {})
+RESTAURANT_NAME  = _cfg.get("name", "Biryani Paradise")
+RESTAURANT_PHONE = _cfg.get("phone", "+15822599600")
+TIMEZONE         = ZoneInfo(_cfg.get("timezone", "America/New_York"))
+OPEN_HOUR        = _cfg.get("open_hour", 11)
+CLOSE_HOUR       = _cfg.get("close_hour", 22)
+MANAGER_PHONE    = load_config().get("manager_phone", os.getenv("MANAGER_PHONE", ""))
+
+
+def _is_open() -> bool:
+    now = datetime.now(TIMEZONE)
+    return OPEN_HOUR <= now.hour < CLOSE_HOUR
 
 
 def _load_menu_text() -> str:
@@ -77,11 +92,16 @@ YOUR PERSONALITY:
 - You ask follow-up questions that show you're listening: "Since you mentioned you like spicy food, can I suggest..."
 - You're warm but efficient — you know the customer's time is valuable
 
-BEFORE EVERY TOOL CALL — always say a natural phrase out loud first, before checking anything:
-- Before check_availability: "Oh let me check that for you!" or "One moment, let me see!"
-- Before get_available_slots: "Let me see what we have open!" or "Sure, let me check what's available!"
-- Before book_appointment: "Perfect, let me get that booked for you!" or "Wonderful, booking that right now!"
-Never go silent — always speak first, then call the tool.
+CRITICAL — NEVER CALL A TOOL WITHOUT SPEAKING FIRST:
+Your spoken words before a tool call play to the customer WHILE the tool runs. This prevents silence.
+The pattern is always: [speak phrase] → [call tool]. Never: [call tool] alone.
+
+Exact phrases to say before each tool (pick any, vary them naturally):
+- Before check_availability → "Let me check that for you!" / "One moment!" / "Let me see!"
+- Before get_available_slots → "Let me see what's open!" / "Give me just a second!"
+- Before book_appointment → "Perfect, booking that right now!" / "Let me lock that in for you!"
+
+This is the most important rule. Violating it causes dead silence on a phone call.
 
 HANDLING MENU QUESTIONS:
 - If asked what's good: give 2-3 personal recommendations based on any preferences they mentioned
@@ -110,6 +130,19 @@ FOR TAKEOUT/DELIVERY:
 - Collect: name, phone number, items with quantities, delivery address or pickup confirmation
 - If requested time is after 9:30 PM, let them know last takeout order is at 9:30 PM
 - Call book_appointment with order_type="takeout"
+
+ESCALATION / CALL TRANSFER:
+You can transfer the call to a manager using the transfer_to_manager tool.
+When to escalate:
+- Customer explicitly asks for a manager or supervisor
+- Customer is frustrated and two attempts to resolve haven't helped
+- The issue is outside your scope (refund, complaint, dispute, pricing exception)
+
+Before calling transfer_to_manager, always say something like:
+"Of course, let me get our manager on the line for you. Just one moment!"
+
+If the transfer fails, say:
+"I'm sorry, our manager isn't available right now. Can I take your name and number and have them call you right back?"
 
 VOICE RULES:
 - Speak in short natural bursts — 1 sentence at a time, 2 max
@@ -205,6 +238,24 @@ async def book_appointment(
             notes=special_requests,
             metadata={"order_type": order_type, "on_waitlist": on_waitlist},
         )
+
+        # Send SMS confirmation for successful bookings
+        if result.get("status") == "confirmed":
+            try:
+                from my_autonomous_agent.utils.sms import send_booking_sms
+                service_label = "takeout order" if order_type == "takeout" else f"table for {party_size}"
+                send_booking_sms(
+                    to_phone=customer_phone,
+                    customer_name=customer_name,
+                    business_name=RESTAURANT_NAME,
+                    from_phone=RESTAURANT_PHONE,
+                    date_str=date,
+                    time_str=time,
+                    service=service_label,
+                )
+            except Exception as sms_err:
+                logger.error(f"SMS error: {sms_err}")
+
         return result["message"]
     except Exception as e:
         logger.error(f"book_appointment error: {e}")
@@ -212,7 +263,7 @@ async def book_appointment(
 
 
 class BiryaniParadiseAgent(Agent):
-    def __init__(self):
+    def __init__(self, transcript_log: list, extra_tools: list = None):
         super().__init__(
             instructions=RESTAURANT_INSTRUCTIONS,
             llm=openai.LLM.with_azure(
@@ -230,15 +281,39 @@ class BiryaniParadiseAgent(Agent):
                 speech_key=os.getenv("AZURE_SPEECH_KEY"),
                 speech_region=os.getenv("AZURE_SPEECH_REGION"),
             ),
-            tools=[check_availability, get_available_slots, book_appointment],
+            tools=[check_availability, get_available_slots, book_appointment] + (extra_tools or []),
         )
+        self._transcript = transcript_log
 
     async def on_enter(self) -> None:
-        await self.session.say(
-            "Namaste! Thanks for calling Biryani Paradise. "
-            "How can I help you today — are you looking to book a table or place an order?",
-            allow_interruptions=False,
-        )
+        if not _is_open():
+            await self.session.say(
+                f"Namaste! Thanks for calling Biryani Paradise. "
+                f"Oh, we're actually closed right now — our hours are 11 AM to 10 PM daily. "
+                f"Please do call us back then, we'd love to help you!",
+                allow_interruptions=True,
+            )
+        else:
+            await self.session.say(
+                "Namaste! Thanks for calling Biryani Paradise. "
+                "How can I help you today — are you looking to book a table or place an order?",
+                allow_interruptions=True,
+            )
+
+    async def on_user_turn_completed(self, turn_ctx=None, new_message=None) -> None:
+        """Capture user turns for transcript."""
+        if new_message and hasattr(new_message, "content"):
+            content = new_message.content
+            if isinstance(content, list):
+                text = " ".join(getattr(c, "text", "") for c in content if hasattr(c, "text"))
+            else:
+                text = str(content)
+            if text.strip():
+                self._transcript.append({
+                    "role": "user",
+                    "text": text.strip(),
+                    "ts": datetime.now().isoformat(),
+                })
 
 
 def prewarm(proc: JobProcess):
@@ -254,15 +329,81 @@ async def entrypoint(ctx: JobContext):
     logger.info(f"Reservation agent starting for room: {ctx.room.name}")
     await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
 
+    transcript: list = []
+    call_start = datetime.now().isoformat()
+
+    # Extract caller number from room name e.g. "biryani-_+19542926200_iMhGkEisKzCy"
+    caller_number = ""
+    room_name = ctx.room.name
+    if "_+" in room_name:
+        parts = room_name.split("_+")
+        if len(parts) > 1:
+            caller_number = "+" + parts[1].split("_")[0]
+
+    @function_tool
+    async def transfer_to_manager() -> str:
+        """
+        Transfer the call to a manager or supervisor.
+        Only call this when the customer requests a manager, or after two failed
+        attempts to resolve a complaint/dispute yourself.
+        Always say a handoff phrase out loud before calling this tool.
+        """
+        if not MANAGER_PHONE:
+            return "Manager phone not configured. Take a message and promise a callback."
+
+        sip_participant = next(iter(ctx.room.remote_participants.values()), None)
+        if not sip_participant:
+            return "No active caller found to transfer."
+
+        try:
+            from livekit import api as lk_api
+            lk = lk_api.LiveKitAPI(
+                url=os.getenv("LIVEKIT_URL"),
+                api_key=os.getenv("LIVEKIT_API_KEY"),
+                api_secret=os.getenv("LIVEKIT_API_SECRET"),
+            )
+            await lk.sip.transfer_sip_participant(
+                lk_api.TransferSIPParticipantRequest(
+                    room_name=ctx.room.name,
+                    participant_identity=sip_participant.identity,
+                    transfer_to=f"tel:{MANAGER_PHONE}",
+                )
+            )
+            await lk.aclose()
+            logger.info(f"SIP transfer initiated to {MANAGER_PHONE}")
+            return "Transfer initiated. The call is being connected to the manager."
+        except Exception as e:
+            logger.error(f"SIP transfer failed: {e}")
+            return "Transfer failed. Please take the customer's name and number and promise a callback."
+
+    agent = BiryaniParadiseAgent(transcript_log=transcript, extra_tools=[transfer_to_manager])
+
     session = AgentSession(
         vad=ctx.proc.userdata["vad"],
         min_endpointing_delay=0.2,
         max_endpointing_delay=1.2,
-        min_interruption_duration=0.6,
+        min_interruption_duration=0.3,
         allow_interruptions=True,
     )
 
-    await session.start(room=ctx.room, agent=BiryaniParadiseAgent())
+    @ctx.room.on("disconnected")
+    def on_room_disconnected(*_args):
+        ended_at = datetime.now().isoformat()
+        logger.info(f"Room disconnected — saving transcript ({len(transcript)} turns)")
+        try:
+            from my_autonomous_agent.booking.reservations import save_transcript as _save
+            _save(
+                business_id=BUSINESS_ID,
+                room_name=room_name,
+                caller_number=caller_number,
+                transcript=transcript,
+                started_at=call_start,
+                ended_at=ended_at,
+            )
+        except Exception as e:
+            logger.error(f"Transcript save error: {e}")
+
+    await session.start(room=ctx.room, agent=agent)
 
 
 if __name__ == "__main__":

@@ -182,6 +182,35 @@ def cancel_appointment(appointment_id: str) -> dict:
     return {"status": "cancelled", "message": "Booking cancelled successfully."}
 
 
+def save_transcript(
+    business_id: str,
+    room_name: str,
+    caller_number: str,
+    transcript: list,
+    started_at: str,
+    ended_at: str,
+) -> None:
+    """
+    Persist a call transcript to the call_transcripts table.
+    Silently logs on failure — never raises.
+    """
+    import logging
+    _log = logging.getLogger(__name__)
+    db = get_client()
+    try:
+        db.table("call_transcripts").insert({
+            "business_id": business_id,
+            "room_name": room_name,
+            "caller_number": caller_number,
+            "transcript": transcript,
+            "started_at": started_at,
+            "ended_at": ended_at,
+        }).execute()
+        _log.info(f"Transcript saved | room={room_name} | turns={len(transcript)}")
+    except Exception as e:
+        _log.error(f"Failed to save transcript | room={room_name} | error={e}")
+
+
 def get_appointments(business_id: str, appt_date: str) -> list:
     """Get all confirmed appointments for a business on a given date."""
     db = get_client()

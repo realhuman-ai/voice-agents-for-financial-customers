@@ -1,0 +1,28 @@
+{
+  "manager_phone": "+18323303619",
+
+  "security": {
+    "reject_anonymous_calls": true,
+    "max_call_duration_seconds": 600,
+    "rate_limit_calls_per_hour": 5,
+    "blocked_numbers": []
+  },
+
+
+  "quick_lube": {
+    "name": "Golden Wrench Auto services",
+    "phone": "+12183962707",
+    "timezone": "America/New_York",
+    "open_days": [0, 1, 2, 3, 4, 5],
+    "open_hour": 8,
+    "close_hour": 18
+  },
+
+  "biryani_paradise": {
+    "name": "Biryani Paradise",
+    "phone": "+15822599600",
+    "timezone": "America/New_York",
+    "open_hour": 11,
+    "close_hour": 22
+  }
+}
